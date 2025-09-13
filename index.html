@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wardrobe Care Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --dark-bg: #1a1a1a;
+            --card-bg: #2a2a2a;
+            --accent: #6b4c4c;
+            --text: #e8e8e8;
+            --muted: #999;
+            --burgundy: #722f37;
+            --navy: #2c3e50;
+            --gold: #d4af37;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--dark-bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--burgundy), var(--navy));
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: normal;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        .filters {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            background: var(--card-bg);
+            border-bottom: 1px solid #333;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--muted);
+            color: var(--text);
+            border-radius: 20px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .filter-btn.active {
+            background: var(--burgundy);
+            border-color: var(--burgundy);
+        }
+
+        .wardrobe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 15px;
+        }
+
+        .item-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .item-card:active {
+            transform: scale(0.98);
+        }
+
+        .item-image {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            background: #333;
+        }
+
+        .item-info {
+            padding: 10px;
+        }
+
+        .item-name {
+            font-size: 14px;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .care-icons {
+            display: flex;
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .care-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .wear-count {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            border-top: 1px solid #333;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 24px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .add-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .add-modal.active {
+            display: block;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .photo-upload {
+            width: 100%;
+            aspect-ratio: 3/4;
+            background: #333;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-upload img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-placeholder {
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            background: var(--dark-bg);
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        .care-presets {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .preset-btn {
+            padding: 12px;
+            background: var(--dark-bg);
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+        }
+
+        .preset-btn.selected {
+            background: var(--burgundy);
+            border-color: var(--burgundy);
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--burgundy), var(--navy));
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            font-family: inherit;
+            letter-spacing: 1px;
+        }
+
+        .item-detail-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .item-detail-modal.active {
+            display: block;
+        }
+
+        .detail-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .detail-info {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .detail-label {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .wear-tracker {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px 0;
+        }
+
+        .wear-btn {
+            padding: 10px 20px;
+            background: var(--accent);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .delete-btn {
+            width: 100%;
+            padding: 12px;
+            background: #8b0000;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            margin-top: 20px;
+            font-family: inherit;
+        }
+
+        .stats {
+            padding: 15px;
+            background: var(--card-bg);
+            margin: 15px;
+            border-radius: 8px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .washing-groups {
+            padding: 0 15px;
+        }
+
+        .wash-group {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .wash-group-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: var(--burgundy);
+        }
+
+        .wash-group-items {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+        }
+
+        .mini-item {
+            flex-shrink: 0;
+            width: 80px;
+        }
+
+        .mini-item img {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .mini-item-name {
+            font-size: 11px;
+            margin-top: 4px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>WARDROBE CARE</h1>
+    </div>
+
+    <div class="filters">
+        <button class="filter-btn active" data-filter="all">All Items</button>
+        <button class="filter-btn" data-filter="wash">By Wash Type</button>
+        <button class="filter-btn" data-filter="tops">Tops</button>
+        <button class="filter-btn" data-filter="bottoms">Bottoms</button>
+        <button class="filter-btn" data-filter="dresses">Dresses</button>
+        <button class="filter-btn" data-filter="outerwear">Outerwear</button>
+    </div>
+
+    <div class="stats" id="stats" style="display: none;">
+        <div class="stat-row">
+            <span>Total Items:</span>
+            <span id="totalItems">0</span>
+        </div>
+        <div class="stat-row">
+            <span>Total Wears:</span>
+            <span id="totalWears">0</span>
+        </div>
+        <div class="stat-row">
+            <span>Most Worn:</span>
+            <span id="mostWorn">-</span>
+        </div>
+    </div>
+
+    <div id="mainContent">
+        <div class="wardrobe-grid" id="wardrobeGrid"></div>
+    </div>
+
+    <div class="washing-groups" id="washingGroups" style="display: none;"></div>
+
+    <div class="bottom-nav">
+        <button class="nav-btn" onclick="showView('grid')">👔</button>
+        <button class="nav-btn" onclick="openAddModal()">📷</button>
+        <button class="nav-btn" onclick="showStats()">📊</button>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div class="add-modal" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Item</h2>
+                <button class="close-btn" onclick="closeAddModal()">✕</button>
+            </div>
+
+            <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+                <div class="photo-placeholder" id="photoPlaceholder">
+                    <div style="font-size: 48px;">📷</div>
+                    <div>Tap to add photo</div>
+                </div>
+                <img id="photoPreview" style="display: none;">
+            </div>
+            <input type="file" id="photoInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePhotoUpload(event)">
+
+            <div class="form-group">
+                <label>Item Name</label>
+                <input type="text" class="form-control" id="itemName" placeholder="e.g., Navy wool blazer">
+            </div>
+
+            <div class="form-group">
+                <label>Category</label>
+                <select class="form-control" id="itemCategory">
+                    <option value="tops">Tops</option>
+                    <option value="bottoms">Bottoms</option>
+                    <option value="dresses">Dresses</option>
+                    <option value="outerwear">Outerwear</option>
+                    <option value="shoes">Shoes</option>
+                    <option value="accessories">Accessories</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Quick Care Preset</label>
+                <div class="care-presets">
+                    <button class="preset-btn" onclick="setCarePreset('delicate')">
+                        Delicate<br>
+                        <small>Cold wash, hang dry</small>
+                    </button>
+                    <button class="preset-btn" onclick="setCarePreset('normal')">
+                        Normal<br>
+                        <small>Cold wash, tumble low</small>
+                    </button>
+                    <button class="preset-btn" onclick="setCarePreset('wool')">
+                        Wool/Knit<br>
+                        <small>Hand wash, lay flat</small>
+                    </button>
+                    <button class="preset-btn" onclick="setCarePreset('dry')">
+                        Dry Clean<br>
+                        <small>Professional only</small>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Wash Instructions</label>
+                <select class="form-control" id="washType">
+                    <option value="cold-machine">Machine - Cold</option>
+                    <option value="warm-machine">Machine - Warm</option>
+                    <option value="hand">Hand Wash</option>
+                    <option value="dry-clean">Dry Clean Only</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Dry Instructions</label>
+                <select class="form-control" id="dryType">
+                    <option value="hang">Hang Dry</option>
+                    <option value="flat">Lay Flat</option>
+                    <option value="tumble-low">Tumble Low</option>
+                    <option value="tumble-medium">Tumble Medium</option>
+                    <option value="dry-clean">Dry Clean</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Color</label>
+                <input type="text" class="form-control" id="itemColor" placeholder="e.g., Navy, Black, Burgundy">
+            </div>
+
+            <button class="save-btn" onclick="saveItem()">Save to Wardrobe</button>
+        </div>
+    </div>
+
+    <!-- Item Detail Modal -->
+    <div class="item-detail-modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailName">Item Details</h2>
+                <button class="close-btn" onclick="closeDetailModal()">✕</button>
+            </div>
+
+            <img id="detailImage" class="detail-image">
+
+            <div class="detail-info">
+                <div class="detail-row">
+                    <span class="detail-label">Category</span>
+                    <span id="detailCategory"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Color</span>
+                    <span id="detailColor"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Wash</span>
+                    <span id="detailWash"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Dry</span>
+                    <span id="detailDry"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Cost per Wear</span>
+                    <span id="detailCPW">-</span>
+                </div>
+
+                <div class="wear-tracker">
+                    <button class="wear-btn" onclick="incrementWear()">Mark as Worn</button>
+                    <span>Worn <span id="detailWears">0</span> times</span>
+                </div>
+
+                <button class="delete-btn" onclick="deleteItem()">Remove from Wardrobe</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let wardrobeItems = JSON.parse(localStorage.getItem('wardrobeItems')) || [];
+        let currentItem = null;
+        let currentView = 'grid';
+
+        function initializeApp() {
+            loadSampleData();
+            renderWardrobe();
+        }
+
+        function loadSampleData() {
+            if (wardrobeItems.length === 0) {
+                // Add sample items matching the Deep Winter palette
+                wardrobeItems = [
+                    {
+                        id: Date.now() + 1,
+                        name: "Navy Sweater with Collar",
+                        category: "tops",
+                        color: "Navy",
+                        washType: "cold-machine",
+                        dryType: "hang",
+                        wears: 0,
+                        price: 45,
+                        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 200'%3E%3Crect fill='%232c3e50' width='150' height='200'/%3E%3Ctext x='75' y='100' text-anchor='middle' fill='white' font-size='14'%3ENavy Sweater%3C/text%3E%3C/svg%3E"
+                    },
+                    {
+                        id: Date.now() + 2,
+                        name: "Burgundy Dress Pants",
+                        category: "bottoms",
+                        color: "Burgundy",
+                        washType: "cold-machine",
+                        dryType: "hang",
+                        wears: 0,
+                        price: 65,
+                        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 200'%3E%3Crect fill='%23722f37' width='150' height='200'/%3E%3Ctext x='75' y='100' text-anchor='middle' fill='white' font-size='14'%3EBurgundy Pants%3C/text%3E%3C/svg%3E"
+                    },
+                    {
+                        id: Date.now() + 3,
+                        name: "Black V-Neck",
+                        category: "tops",
+                        color: "Black",
+                        washType: "cold-machine",
+                        dryType: "tumble-low",
+                        wears: 0,
+                        price: 25,
+                        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 200'%3E%3Crect fill='%23000000' width='150' height='200'/%3E%3Ctext x='75' y='100' text-anchor='middle' fill='white' font-size='14'%3EBlack V-Neck%3C/text%3E%3C/svg%3E"
+                    }
+                ];
+                saveWardrobe();
+            }
+        }
+
+        function renderWardrobe(filter = 'all') {
+            const grid = document.getElementById('wardrobeGrid');
+            
+            if (filter === 'wash') {
+                renderWashingGroups();
+                return;
+            }
+
+            let items = wardrobeItems;
+            if (filter !== 'all') {
+                items = wardrobeItems.filter(item => item.category === filter);
+            }
+
+            grid.innerHTML = items.map(item => `
+                <div class="item-card" onclick="openDetailModal(${item.id})">
+                    <img src="${item.image}" class="item-image" alt="${item.name}">
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="care-icons">
+                            ${getWashIcon(item.washType)}
+                            ${getDryIcon(item.dryType)}
+                        </div>
+                        <div class="wear-count">${item.wears} wears</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderWashingGroups() {
+            const groups = {};
+            wardrobeItems.forEach(item => {
+                if (!groups[item.washType]) {
+                    groups[item.washType] = [];
+                }
+                groups[item.washType].push(item);
+            });
+
+            const washingGroupsDiv = document.getElementById('washingGroups');
+            const wardrobeGrid = document.getElementById('wardrobeGrid');
+            
+            wardrobeGrid.style.display = 'none';
+            washingGroupsDiv.style.display = 'block';
+
+            washingGroupsDiv.innerHTML = Object.entries(groups).map(([type, items]) => `
+                <div class="wash-group">
+                    <div class="wash-group-title">${getWashLabel(type)} (${items.length} items)</div>
+                    <div class="wash-group-items">
+                        ${items.map(item => `
+                            <div class="mini-item" onclick="openDetailModal(${item.id})">
+                                <img src="${item.image}" alt="${item.name}">
+                                <div class="mini-item-name">${item.name}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getWashLabel(type) {
+            const labels = {
+                'cold-machine': '❄️ Machine Cold',
+                'warm-machine': '♨️ Machine Warm',
+                'hand': '🤲 Hand Wash',
+                'dry-clean': '🧼 Dry Clean'
+            };
+            return labels[type] || type;
+        }
+
+        function getWashIcon(type) {
+            const icons = {
+                'cold-machine': '<div class="care-icon" style="background: #4169e1;">C</div>',
+                'warm-machine': '<div class="care-icon" style="background: #ff6347;">W</div>',
+                'hand': '<div class="care-icon" style="background: #9370db;">H</div>',
+                'dry-clean': '<div class="care-icon" style="background: #2f4f4f;">D</div>'
+            };
+            return icons[type] || '';
+        }
+
+        function getDryIcon(type) {
+            const icons = {
+                'hang': '<div class="care-icon" style="background: #468b46;">⟂</div>',
+                'flat': '<div class="care-icon" style="background: #8b7355;">━</div>',
+                'tumble-low': '<div class="care-icon" style="background: #4682b4;">○</div>',
+                'tumble-medium': '<div class="care-icon" style="background: #ff8c00;">●</div>',
+                'dry-clean': '<div class="care-icon" style="background: #2f4f4f;">D</div>'
+            };
+            return icons[type] || '';
+        }
+
+        function openAddModal() {
+            document.getElementById('addModal').classList.add('active');
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('active');
+            resetAddForm();
+        }
+
+        function openDetailModal(id) {
+            const item = wardrobeItems.find(i => i.id === id);
+            if (!item) return;
+
+            currentItem = item;
+            document.getElementById('detailName').textContent = item.name;
+            document.getElementById('detailImage').src = item.image;
+            document.getElementById('detailCategory').textContent = item.category;
+            document.getElementById('detailColor').textContent = item.color;
+            document.getElementById('detailWash').textContent = getWashLabel(item.washType);
+            document.getElementById('detailDry').textContent = item.dryType.replace('-', ' ');
+            document.getElementById('detailWears').textContent = item.wears;
+            
+            if (item.price && item.wears > 0) {
+                const cpw = (item.price / item.wears).toFixed(2);
+                document.getElementById('detailCPW').textContent = `$${cpw}`;
+            } else {
+                document.getElementById('detailCPW').textContent = '-';
+            }
+
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+            currentItem = null;
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('photoPreview').src = e.target.result;
+                    document.getElementById('photoPreview').style.display = 'block';
+                    document.getElementById('photoPlaceholder').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function setCarePreset(preset) {
+            // Clear previous selection
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Mark selected
+            event.target.classList.add('selected');
+
+            const presets = {
+                'delicate': { wash: 'cold-machine', dry: 'hang' },
+                'normal': { wash: 'cold-machine', dry: 'tumble-low' },
+                'wool': { wash: 'hand', dry: 'flat' },
+                'dry': { wash: 'dry-clean', dry: 'dry-clean' }
+            };
+
+            if (presets[preset]) {
+                document.getElementById('washType').value = presets[preset].wash;
+                document.getElementById('dryType').value = presets[preset].dry;
+            }
+        }
+
+        function saveItem() {
+            const name = document.getElementById('itemName').value;
+            const category = document.getElementById('itemCategory').value;
+            const washType = document.getElementById('washType').value;
+            const dryType = document.getElementById('dryType').value;
+            const color = document.getElementById('itemColor').value;
+            const image = document.getElementById('photoPreview').src;
+
+            if (!name || !image || image === '') {
+                alert('Please add a photo and name for the item');
+                return;
+            }
+
+            const newItem = {
+                id: Date.now(),
+                name,
+                category,
+                color,
+                washType,
+                dryType,
+                wears: 0,
+                image
+            };
+
+            wardrobeItems.push(newItem);
+            saveWardrobe();
+            renderWardrobe();
+            closeAddModal();
+        }
+
+        function incrementWear() {
+            if (currentItem) {
+                currentItem.wears++;
+                saveWardrobe();
+                document.getElementById('detailWears').textContent = currentItem.wears;
+                
+                if (currentItem.price && currentItem.wears > 0) {
+                    const cpw = (currentItem.price / currentItem.wears).toFixed(2);
+                    document.getElementById('detailCPW').textContent = `$${cpw}`;
+                }
+            }
+        }
+
+        function deleteItem() {
+            if (currentItem && confirm('Remove this item from your wardrobe?')) {
+                wardrobeItems = wardrobeItems.filter(item => item.id !== currentItem.id);
+                saveWardrobe();
+                renderWardrobe();
+                closeDetailModal();
+            }
+        }
+
+        function saveWardrobe() {
+            localStorage.setItem('wardrobeItems', JSON.stringify(wardrobeItems));
+        }
+
+        function resetAddForm() {
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemColor').value = '';
+            document.getElementById('photoPreview').src = '';
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('photoPlaceholder').style.display = 'block';
+            document.getElementById('photoInput').value = '';
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+        }
+
+        function showView(view) {
+            const wardrobeGrid = document.getElementById('wardrobeGrid');
+            const washingGroups = document.getElementById('washingGroups');
+            const stats = document.getElementById('stats');
+
+            wardrobeGrid.style.display = 'none';
+            washingGroups.style.display = 'none';
+            stats.style.display = 'none';
+
+            if (view === 'grid') {
+                wardrobeGrid.style.display = 'grid';
+                renderWardrobe('all');
+            }
+        }
+
+        function showStats() {
+            const stats = document.getElementById('stats');
+            const wardrobeGrid = document.getElementById('wardrobeGrid');
+            const washingGroups = document.getElementById('washingGroups');
+
+            wardrobeGrid.style.display = 'none';
+            washingGroups.style.display = 'none';
+            stats.style.display = 'block';
+
+            // Calculate stats
+            document.getElementById('totalItems').textContent = wardrobeItems.length;
+            
+            const totalWears = wardrobeItems.reduce((sum, item) => sum + item.wears, 0);
+            document.getElementById('totalWears').textContent = totalWears;
+
+            const mostWorn = wardrobeItems.reduce((max, item) => 
+                item.wears > (max?.wears || 0) ? item : max, null);
+            document.getElementById('mostWorn').textContent = mostWorn ? mostWorn.name : '-';
+        }
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.dataset.filter;
+                renderWardrobe(filter);
+            });
+        });
+
+        // Initialize app
+        initializeApp();
+    </script>
+</body>
+</html>
